@@ -1,0 +1,45 @@
+#!/usr/bin/python3
+import sys
+import os
+import datetime
+import subprocess
+#import argparse
+#parser = argparse.ArgumentParser()
+#parser.parse_args()
+
+
+# Get the parameters
+MYSQLSH_BIN="/usr/bin/mysqlsh"
+MYSQLDUMP_OPT=sys.argv[1:-1]
+MYSQLDUMP_FOLDER=sys.argv[-1]
+
+FOLDER_DATE_FORMAT="_%Y_%m_%d_%H_%M_%S"
+
+#TODO
+MYSQLSHDUMP_ROUTINES=False
+MYSQLSHDUMP_TRIGGERS=False
+
+
+for arg in MYSQLDUMP_OPT:
+    if arg == "-A" or arg == "--all-databases":
+        MYSQLSHDUMP=" --py -e 'util.dump_instance({folder})'".format(folder=MYSQLDUMP_FOLDER)
+    if arg == "--databases" or arg == "-B":
+        DATABASE_NAME=MYSQLDUMP_OPT[MYSQLDUMP_OPT.index(arg)+1]
+        MYSQLDUMP_OPT[MYSQLDUMP_OPT.index(arg)]="--database"
+        MYSQLSHDUMP=" --py -e 'util.dump_schemas({database},{folder})'".format(database=DATABASE_NAME,folder=MYSQLDUMP_FOLDER)
+        
+
+# Check if output folder exists and is empty. Else add timestamp to  output folder 
+if os.path.exists(MYSQLDUMP_FOLDER) and os.path.isdir(MYSQLDUMP_FOLDER):
+    if  os.listdir(MYSQLDUMP_FOLDER):
+        MYSQLDUMP_FOLDER=MYSQLDUMP_FOLDER+datetime.datetime.now().strftime(FOLDER_DATE_FORMAT)
+else:
+        MYSQLDUMP_FOLDER=MYSQLDUMP_FOLDER+datetime.datetime.now().strftime(FOLDER_DATE_FORMAT)
+
+
+
+# Debug
+#print([MYSQLSH_BIN] + MYSQLDUMP_OPT + [MYSQLSHDUMP])
+
+# Run mysqlsh
+subprocess.run([MYSQLSH_BIN] + MYSQLDUMP_OPT + [MYSQLSHDUMP] )
